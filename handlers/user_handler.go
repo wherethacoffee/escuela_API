@@ -25,7 +25,6 @@ func AddUser(c *fiber.Ctx) error {
     }
 
     user.Password = hash
-    user.IsAdmin = false
 
     err = database.InsertUser(user)
     if err != nil {
@@ -125,7 +124,7 @@ func Login(c *fiber.Ctx) error {
 
     userFound, err := database.GetUserByUsername(user.Username)
     if err != nil {
-	return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+	return c.Status(fiber.StatusNotFound).JSON(&fiber.Map{
 	    "error": "Failed to fetch user",
 	})
     }
@@ -137,5 +136,37 @@ func Login(c *fiber.Ctx) error {
     }
     return c.Status(fiber.StatusOK).JSON(&fiber.Map{
 	"message": "Login succesfully",
+    })
+}
+
+func LoginAdmin(c *fiber.Ctx) error {
+    var user models.User
+
+    if err := c.BodyParser(&user); err != nil {
+	return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+	    "error": "Invalid request payload",
+	})
+    }
+
+    userFound, err := database.GetUserByUsername(user.Username)
+    if err != nil {
+	return c.Status(fiber.StatusNotFound).JSON(&fiber.Map{
+	    "error": "Failed to fetch user",
+	})
+    }
+    isMatch, err := middlewares.CheckPassword(user.Password, userFound.Password)
+    if !isMatch || err != nil {
+	return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+	    "error": "Wrong password",
+	})
+    }
+    isAdmin := userFound.IsAdmin
+    if !isAdmin {
+	return c.Status(fiber.StatusForbidden).JSON(&fiber.Map{
+	    "error": "You have not admin credentials",
+	})
+    }
+    return c.Status(fiber.StatusOK).JSON(&fiber.Map{
+	"message": "Login succesfully into admin",
     })
 }
