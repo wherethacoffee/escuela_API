@@ -27,9 +27,17 @@ func main() {
 	database.Connect(uri, db_name)
 
 	//CORS implementation
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+	    AllowCredentials: true,
+	    AllowOrigins: "http://localhost:5173",
+	    AllowMethods: "GET, POST, PUT, DELETE",
+	    AllowHeaders: "Origin, Content-Type, Accept",
+	}))
 
 	//Routes
+	app.Get("/", func(c *fiber.Ctx) error {
+	    return c.SendString("Helo, world! 👋")
+	})
 	routes.UsersRoutes(app)
 	routes.RecordsRoutes(app)
 	routes.DepositsRoutes(app)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/wherethacoffe/escuela_API/database"
 	"github.com/wherethacoffe/escuela_API/middlewares"

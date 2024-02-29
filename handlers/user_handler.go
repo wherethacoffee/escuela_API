@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"fmt"
+	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/wherethacoffe/escuela_API/database"
 	"github.com/wherethacoffe/escuela_API/middlewares"
 	"github.com/wherethacoffe/escuela_API/models"
@@ -134,6 +138,23 @@ func Login(c *fiber.Ctx) error {
 	    "error": "Wrong password",
 	})
     }
+
+    token, err := middlewares.CreateAccessToken(userFound)
+    if err != nil {
+	fmt.Println(err)
+	return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+	    "error": "Couldn't login",
+	})
+    }
+
+    cookie := fiber.Cookie{
+	Name: "user",
+	Value: token,
+	Expires: time.Now().Add(time.Hour * 24),
+    }
+
+    c.Cookie(&cookie)
+
     return c.Status(fiber.StatusOK).JSON(&fiber.Map{
 	"message": "Login succesfully",
     })
@@ -166,7 +187,110 @@ func LoginAdmin(c *fiber.Ctx) error {
 	    "error": "You have not admin credentials",
 	})
     }
+
+    token, err := middlewares.CreateAccessToken(userFound)
+    if err != nil {
+	fmt.Println(err)
+	return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+	    "error": "Couldn't login",
+	})
+    }
+
+    cookie := fiber.Cookie{
+	Name: "admin",
+	Value: token,
+	Expires: time.Now().Add(time.Hour * 24),
+	HTTPOnly: true,
+    }
+
+    c.Cookie(&cookie)
     return c.Status(fiber.StatusOK).JSON(&fiber.Map{
 	"message": "Login succesfully into admin",
     })
+}
+
+func UserProfile(c *fiber.Ctx) error {
+   secretKey := os.Getenv("SECRET_KEY")
+
+   if secretKey == "" {
+	return fmt.Errorf("Secret key not set in environment variables")
+   }
+
+   myKey := []byte(secretKey)
+
+   cookie := c.Cookies("user")
+
+   token, err := jwt.ParseWithClaims(cookie, &jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
+	return []byte(myKey), nil
+   })
+
+   if err != nil {
+	return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
+	    "error": "Unauthorized",
+	})
+   }
+
+   claims := token.Claims.(*jwt.RegisteredClaims)
+
+   return c.Status(fiber.StatusOK).JSON(&fiber.Map{
+	"user token": claims,
+   })
+}
+
+func AdminProfile(c *fiber.Ctx) error {
+   secretKey := os.Getenv("SECRET_KEY")
+
+   if secretKey == "" {
+	return fmt.Errorf("Secret key not set in environment variables")
+   }
+
+   myKey := []byte(secretKey)
+
+   cookie := c.Cookies("admin")
+
+   token, err := jwt.ParseWithClaims(cookie, &jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
+	return []byte(myKey), nil
+   })
+
+   if err != nil {
+	return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
+	    "error": "Unauthorized",
+	})
+   }
+
+   claims := token.Claims.(*jwt.RegisteredClaims)
+
+   return c.Status(fiber.StatusOK).JSON(&fiber.Map{
+	"admin token": claims,
+   })
+}
+
+func Logout(c *fiber.Ctx) error {
+   cookie := fiber.Cookie{
+	Name: "user",
+	Value: "",
+	Expires: time.Now().Add(-time.Hour),
+	HTTPOnly: true,
+   }
+
+   c.Cookie(&cookie)
+
+   return c.Status(fiber.StatusOK).JSON(&fiber.Map{
+	"message": "Logout succesfully",
+   })
+}
+
+func LogoutAdmin(c *fiber.Ctx) error {
+   cookie := fiber.Cookie{
+	Name: "admin",
+	Value: "",
+	Expires: time.Now().Add(-time.Hour),
+	HTTPOnly: true,
+   }
+
+   c.Cookie(&cookie)
+
+   return c.Status(fiber.StatusOK).JSON(&fiber.Map{
+	"message": "Logout succesfully",
+   })
 }
