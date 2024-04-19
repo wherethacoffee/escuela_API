@@ -29,7 +29,7 @@ func main() {
 	//CORS implementation
 	app.Use(cors.New(cors.Config{
 	    AllowCredentials: true,
-	    AllowOrigins: "http://localhost:5173",
+	    AllowOrigins: "*",
 	    AllowMethods: "GET, POST, PUT, DELETE",
 	    AllowHeaders: "Origin, Content-Type, Accept",
 	}))
