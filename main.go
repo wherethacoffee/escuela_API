@@ -12,7 +12,7 @@ import (
 
 func main() {
 	//Environment variables
-	port := os.Getenv("PORT")
+	port := os.Getenv("APP_PORT")
 	uri := os.Getenv("MONGO_URI")
 	db_name := os.Getenv("MONGO_DBNAME")
 	
