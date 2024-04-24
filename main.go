@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	//"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/wherethacoffe/escuela_API/database"
 	"github.com/wherethacoffe/escuela_API/routes"
 )
@@ -23,21 +23,16 @@ func main() {
 	//Fiber app creation
 	app := fiber.New()
 
+	//CORS
+	//app.Use(cors.New())
+
 	//MongoDB connection
 	database.Connect(uri, db_name)
 
-	//CORS implementation
-	app.Use(cors.New(cors.Config{
-	    AllowCredentials: true,
-	    AllowOrigins: "*",
-	    AllowMethods: "GET, POST, PUT, DELETE",
-	    AllowHeaders: "Origin, Content-Type, Accept",
-	}))
+	//Frontend
+	app.Static("/", "./dist")
 
 	//Routes
-	app.Get("/", func(c *fiber.Ctx) error {
-	    return c.SendString("Helo, world! 👋")
-	})
 	routes.UsersRoutes(app)
 	routes.RecordsRoutes(app)
 	routes.DepositsRoutes(app)
